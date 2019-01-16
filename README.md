@@ -27,6 +27,7 @@ type Context = BaseContext & JsonEnvelopeConfig
 
 - Adds `sendData` & `sendFail` method to the context for easy use
 - Sets `name` & `version` in the envelope from `package.json` values
+- Optionally handle express errors by passing `handleErrors`
 
 ### Success Response, HTTP 200
 

@@ -1,7 +1,7 @@
 import { Module, ChowChow, BaseContext } from '@robb_j/chowchow'
 import { Api, IApiOptions } from 'api-formatter'
 
-type JsonEnvelopeConfig = IApiOptions
+type JsonEnvelopeConfig = { handleErrors?: boolean } & IApiOptions
 
 export type JsonEnvelopeContext = {
   sendData: (data: any) => void
@@ -28,7 +28,24 @@ export class JsonEnvelopeModule implements Module {
   constructor(public config: JsonEnvelopeConfig = {}) {}
 
   checkEnvironment() {}
-  setupModule() {}
+  setupModule() {
+    const { handleErrors = false } = this.config
+
+    if (handleErrors) {
+      this.app.applyErrorHandler((err, ctx) => {
+        const api = new Api(ctx.req, ctx.res, this.config)
+        let messages: string[]
+
+        if (err[Symbol.iterator]) messages = Array.from(err)
+        else if (typeof err === 'string') messages = [err]
+        else if (err instanceof Error) messages = [err.message]
+        else messages = ['An unknown error occurred']
+
+        api.sendFail(messages)
+        ctx.next()
+      })
+    }
+  }
   clearModule() {}
   extendExpress() {}
 
