@@ -1,7 +1,7 @@
 # Chow Chow | Json Envelope
 
-Provides json response envelopes to [chowchow](https://github.com/robb-j/chowchow)
-using [api-formatter](https://npmjs.org/package/api-formatter).
+Provides json response envelopes to [chowchow](https://github.com/robb-j/chowchow),
+similar to [api-formatter](https://npmjs.org/package/api-formatter).
 
 ```ts
 import { ChowChow, BaseContext } from '@robb_j/chowchow'
@@ -11,23 +11,37 @@ import {
 } from '@robb_j/chowchow-json-envelope'
 
 type Context = BaseContext & JsonEnvelopeConfig
-;async () => {
+
+// App entry point
+;(async () => {
   let chow = ChowChow.create()
 
-  chow.use(new JsonEnvelopeModule({}))
+  // Add the module
+  chow.use(
+    new JsonEnvelopeModule({
+      name: 'my-fancy-api',
+      version: 'v1',
+      handleErrors: true
+    })
+  )
 
+  // Adds new methods to the context
+  chow.applyRoutes((app, r) => {
+    app.get('/', r(ctx => ctx.sendData('Hey!')))
+    app.get('/err', r(ctx => ctx.sendFail(['Something broke']), 418))
+  })
+
+  // Run chow
   await chow.start()
-}
+})()
 ```
 
 ## Features
 
-> See [robb-j/api-formatter](https://github.com/robb-j/api-formatter) for usage,
-> this module passes its config onto api-formatter's `Api`
-
-- Adds `sendData` & `sendFail` method to the context for easy use
-- Sets `name` & `version` in the envelope from `package.json` values
+- Adds a `sendData` & `sendFail` method to the context to send formatted responses
+- Defaults `name` & `version` in the envelope from `package.json` values
 - Optionally handle express errors by passing `handleErrors`
+  - Any errors thrown from routes will be formatted in the envelope
 
 ### Success Response, HTTP 200
 
@@ -36,8 +50,8 @@ type Context = BaseContext & JsonEnvelopeConfig
   "meta": {
     "success": true,
     "messages": [],
-    "name": "My Fancy Api",
-    "version": "0.1.2"
+    "name": "my-fancy-api",
+    "version": "v1"
   },
   "data": {
     "something": "cool!"
@@ -52,8 +66,8 @@ type Context = BaseContext & JsonEnvelopeConfig
   "meta": {
     "success": false,
     "messages": ["Something went wrong :S"],
-    "name": "My Fancy Api",
-    "version": "0.1.2"
+    "name": "my-fancy-api",
+    "version": "v1"
   },
   "data": null
 }
@@ -62,12 +76,6 @@ type Context = BaseContext & JsonEnvelopeConfig
 ## Dev Commands
 
 ```bash
-# Run the app in dev mode
-npm run dev:once
-
-# Run in dev mode and restart on file changes
-npm run dev:watch
-
 # Lint the source code
 npm run lint
 

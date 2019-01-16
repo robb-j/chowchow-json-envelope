@@ -1,31 +1,25 @@
 import { Module, ChowChow, BaseContext } from '@robb_j/chowchow'
-import { Api, IApiOptions } from 'api-formatter'
 
-type JsonEnvelopeConfig = { handleErrors?: boolean } & IApiOptions
+type JsonEnvelopeConfig = {
+  name?: string
+  version?: string
+  handleErrors?: boolean
+}
 
 export type JsonEnvelopeContext = {
   sendData: (data: any) => void
   sendFail: (messages: string[], status?: number) => void
 }
 
-export function makeEnvelope(
-  data: any,
-  success: boolean,
-  messages: string[],
-  status: number,
-  name: string,
-  version: string
-) {
-  return {
-    meta: { success, messages, status, name, version },
-    data
-  }
-}
-
 export class JsonEnvelopeModule implements Module {
   app: ChowChow = null as any
+  publicName?: string
+  publicVersion?: string
 
-  constructor(public config: JsonEnvelopeConfig = {}) {}
+  constructor(public config: JsonEnvelopeConfig = {}) {
+    this.publicName = config.name || process.env.npm_package_name
+    this.publicVersion = config.version || process.env.npm_package_version
+  }
 
   checkEnvironment() {}
   setupModule() {
@@ -33,7 +27,6 @@ export class JsonEnvelopeModule implements Module {
 
     if (handleErrors) {
       this.app.applyErrorHandler((err, ctx) => {
-        const api = new Api(ctx.req, ctx.res, this.config)
         let messages: string[]
 
         if (err[Symbol.iterator]) messages = Array.from(err)
@@ -41,19 +34,39 @@ export class JsonEnvelopeModule implements Module {
         else if (err instanceof Error) messages = [err.message]
         else messages = ['An unknown error occurred']
 
-        api.sendFail(messages)
-        ctx.next()
+        ctx.res.send(this.makeEnvelope(null, false, messages, 400))
       })
     }
   }
   clearModule() {}
   extendExpress() {}
 
-  extendEndpointContext(ctx: BaseContext): JsonEnvelopeContext {
-    let api = new Api(ctx.req, ctx.res, this.config)
+  extendEndpointContext({ res }: BaseContext): JsonEnvelopeContext {
+    // let api = new Api(ctx.req, ctx.res, this.config)
     return {
-      sendData: (data: any) => api.sendData(data),
-      sendFail: (msgs: string[], status = 400) => api.sendFail(msgs, status)
+      sendData: (data: any) => {
+        res.send(this.makeEnvelope(data, true))
+      },
+      sendFail: (messages: string[], status = 400) => {
+        res.send(this.makeEnvelope(null, false, messages, status))
+      }
     }
+  }
+
+  makeEnvelope(
+    data: any,
+    success: boolean = true,
+    messages: string[] = [],
+    status: number = 200
+  ) {
+    let envelope: any = {
+      meta: { success, messages, status },
+      data
+    }
+
+    if (this.publicName) envelope.meta.name = this.publicName
+    if (this.publicVersion) envelope.meta.version = this.publicVersion
+
+    return envelope
   }
 }
