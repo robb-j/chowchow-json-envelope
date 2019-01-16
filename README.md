@@ -1,6 +1,6 @@
 # Chow Chow | Json Envelope
 
-Provides json response envelope to [chowchow](https://github.com/robb-j/chowchow)
+Provides json response envelopes to [chowchow](https://github.com/robb-j/chowchow)
 using [api-formatter](https://npmjs.org/package/api-formatter).
 
 ```ts
