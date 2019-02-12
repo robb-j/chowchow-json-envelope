@@ -31,18 +31,12 @@ type Context = BaseContext & JsonEnvelopeConfig
   let chow = ChowChow.create<Context>()
 
   // Add the module
-  chow.use(
-    new JsonEnvelopeModule({
-      name: 'my-fancy-api',
-      version: 'v1',
-      handleErrors: true
-    })
-  )
+  chow.use(new JsonEnvelopeModule({ handleErrors: true }))
 
   // Adds new methods to the context
   chow.applyRoutes((app, r) => {
-    app.get('/', r(ctx => ctx.sendData('Hey!')))
-    app.get('/err', r(ctx => ctx.sendFail(['Something broke']), 418))
+    app.get('/', r(ctx => ctx.sendData({ msg: 'Hey!' })))
+    app.get('/err', r(ctx => ctx.sendFail(['Something broke :S']), 418))
   })
 
   // Run chow
@@ -54,8 +48,10 @@ type Context = BaseContext & JsonEnvelopeConfig
 
 - Adds a `sendData` & `sendFail` method to the context to send formatted responses
 - Defaults `name` & `version` in the envelope from `package.json` values
+  - Configure this by passing them to the constructor
 - Optionally handle express errors by passing `handleErrors`
   - Any errors thrown from routes will be formatted in the envelope
+  - See [Catching errors](#catching-errors) for more
 
 ### Success Response, HTTP 200
 
@@ -68,7 +64,7 @@ type Context = BaseContext & JsonEnvelopeConfig
     "version": "v1"
   },
   "data": {
-    "something": "cool!"
+    "msg": "Hey!"
   }
 }
 ```
@@ -79,17 +75,13 @@ type Context = BaseContext & JsonEnvelopeConfig
 {
   "meta": {
     "success": false,
-    "messages": ["Something went wrong :S"],
+    "messages": ["Something broke :S"],
     "name": "my-fancy-api",
     "version": "v1"
   },
   "data": null
 }
 ```
-
-## Configuration
-
-This module will automatically configure the `name` and `version` from your `package.json`, but you can override them if you want in the constructor.
 
 ## Catching errors
 
