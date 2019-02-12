@@ -4,6 +4,20 @@ Provides json response envelopes to [chowchow](https://github.com/robb-j/chowcho
 similar to [api-formatter](https://npmjs.org/package/api-formatter).
 
 ```ts
+// An example endpoint
+export async function showProduct({ req, sendData, sendFail }: Context) {
+  if (!req.query.id) {
+    sendFail([`Please provide an 'id'`])
+  } else {
+    let product = await findProduct(req.query.id)
+    sendData(product)
+  }
+}
+```
+
+Here's how to configure it:
+
+```ts
 import { ChowChow, BaseContext } from '@robb_j/chowchow'
 import {
   JsonEnvelopeModule,
@@ -14,7 +28,7 @@ type Context = BaseContext & JsonEnvelopeConfig
 
 // App entry point
 ;(async () => {
-  let chow = ChowChow.create()
+  let chow = ChowChow.create<Context>()
 
   // Add the module
   chow.use(
@@ -72,6 +86,21 @@ type Context = BaseContext & JsonEnvelopeConfig
   "data": null
 }
 ```
+
+## Configuration
+
+This module will automatically configure the `name` and `version` from your `package.json`, but you can override them if you want in the constructor.
+
+## Catching errors
+
+You can pass `handleErrors` to add a chowchow error handler which will catch errors
+and send the error message to `sendFail`.
+
+The error handler will look at what was throw to determine how to send back an error.
+
+- It will see if the object is an iterator, looking for [Symbol.iterator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator).
+- It will look for a string directly
+- It will use an `Error`'s message
 
 ## Dev Commands
 
