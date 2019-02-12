@@ -48,7 +48,9 @@ export class JsonEnvelopeModule implements Module {
         res.send(this.makeEnvelope(data, true))
       },
       sendFail: (messages: string[], status = 400) => {
-        res.send(this.makeEnvelope(null, false, messages, status))
+        res
+          .status(status)
+          .send(this.makeEnvelope(null, false, messages, status))
       }
     }
   }
