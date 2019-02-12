@@ -6,6 +6,20 @@ similar to [api-formatter](https://npmjs.org/package/api-formatter).
 [![CircleCI](https://circleci.com/gh/robb-j/chowchow-json-envelope.svg?style=svg)](https://circleci.com/gh/robb-j/chowchow-json-envelope)
 
 ```ts
+// An example endpoint
+export async function showProduct({ req, sendData, sendFail }: Context) {
+  if (!req.query.id) {
+    sendFail([`Please provide an 'id'`])
+  } else {
+    let product = await findProduct(req.query.id)
+    sendData(product)
+  }
+}
+```
+
+Here's how to configure it:
+
+```ts
 import { ChowChow, BaseContext } from '@robb_j/chowchow'
 import {
   JsonEnvelopeModule,
@@ -16,21 +30,15 @@ type Context = BaseContext & JsonEnvelopeConfig
 
 // App entry point
 ;(async () => {
-  let chow = ChowChow.create()
+  let chow = ChowChow.create<Context>()
 
   // Add the module
-  chow.use(
-    new JsonEnvelopeModule({
-      name: 'my-fancy-api',
-      version: 'v1',
-      handleErrors: true
-    })
-  )
+  chow.use(new JsonEnvelopeModule({ handleErrors: true }))
 
   // Adds new methods to the context
   chow.applyRoutes((app, r) => {
-    app.get('/', r(ctx => ctx.sendData('Hey!')))
-    app.get('/err', r(ctx => ctx.sendFail(['Something broke']), 418))
+    app.get('/', r(ctx => ctx.sendData({ msg: 'Hey!' })))
+    app.get('/err', r(ctx => ctx.sendFail(['Something broke :S']), 418))
   })
 
   // Run chow
@@ -42,8 +50,10 @@ type Context = BaseContext & JsonEnvelopeConfig
 
 - Adds a `sendData` & `sendFail` method to the context to send formatted responses
 - Defaults `name` & `version` in the envelope from `package.json` values
+  - Configure this by passing them to the constructor
 - Optionally handle express errors by passing `handleErrors`
   - Any errors thrown from routes will be formatted in the envelope
+  - See [Catching errors](#catching-errors) for more
 
 ### Success Response, HTTP 200
 
@@ -56,7 +66,7 @@ type Context = BaseContext & JsonEnvelopeConfig
     "version": "v1"
   },
   "data": {
-    "something": "cool!"
+    "msg": "Hey!"
   }
 }
 ```
@@ -67,13 +77,24 @@ type Context = BaseContext & JsonEnvelopeConfig
 {
   "meta": {
     "success": false,
-    "messages": ["Something went wrong :S"],
+    "messages": ["Something broke :S"],
     "name": "my-fancy-api",
     "version": "v1"
   },
   "data": null
 }
 ```
+
+## Catching errors
+
+You can pass `handleErrors` to add a chowchow error handler which will catch errors
+and send the error message to `sendFail`.
+
+The error handler will look at what was throw to determine how to send back an error.
+
+- It will see if the object is an iterator, looking for [Symbol.iterator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator).
+- It will look for a string directly
+- It will use an `Error`'s message
 
 ## Dev Commands
 
