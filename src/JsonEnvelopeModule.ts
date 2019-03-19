@@ -23,7 +23,7 @@ export function processError(err: any): string[] {
 }
 
 export class JsonEnvelopeModule implements Module {
-  app: ChowChow = null as any
+  app!: ChowChow
   publicName?: string
   publicVersion?: string
 
