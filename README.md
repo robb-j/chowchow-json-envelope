@@ -3,6 +3,8 @@
 Provides json response envelopes to [chowchow](https://github.com/robb-j/chowchow),
 similar to [api-formatter](https://npmjs.org/package/api-formatter).
 
+[![CircleCI](https://circleci.com/gh/robb-j/chowchow-json-envelope.svg?style=svg)](https://circleci.com/gh/robb-j/chowchow-json-envelope)
+
 ```ts
 // An example endpoint
 export async function showProduct({ req, sendData, sendFail }: Context) {

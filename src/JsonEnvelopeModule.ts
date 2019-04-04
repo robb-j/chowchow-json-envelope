@@ -11,8 +11,19 @@ export type JsonEnvelopeContext = {
   sendFail: (messages: string[], status?: number) => void
 }
 
+export function processError(err: any): string[] {
+  let messages: string[]
+
+  if (err[Symbol.iterator]) messages = Array.from(err)
+  else if (typeof err === 'string') messages = [err]
+  else if (err instanceof Error) messages = [err.message]
+  else messages = ['An unknown error occurred']
+
+  return messages
+}
+
 export class JsonEnvelopeModule implements Module {
-  app: ChowChow = null as any
+  app!: ChowChow
   publicName?: string
   publicVersion?: string
 
@@ -27,14 +38,7 @@ export class JsonEnvelopeModule implements Module {
 
     if (handleErrors) {
       this.app.applyErrorHandler((err, ctx) => {
-        let messages: string[]
-
-        if (err[Symbol.iterator]) messages = Array.from(err)
-        else if (typeof err === 'string') messages = [err]
-        else if (err instanceof Error) messages = [err.message]
-        else messages = ['An unknown error occurred']
-
-        ctx.res.send(this.makeEnvelope(null, false, messages, 400))
+        ctx.res.send(this.makeEnvelope(null, false, processError(err), 400))
       })
     }
   }
@@ -42,7 +46,6 @@ export class JsonEnvelopeModule implements Module {
   extendExpress() {}
 
   extendEndpointContext({ res }: BaseContext): JsonEnvelopeContext {
-    // let api = new Api(ctx.req, ctx.res, this.config)
     return {
       sendData: (data: any) => {
         res.send(this.makeEnvelope(data, true))

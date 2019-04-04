@@ -34,7 +34,9 @@ class JsonEnvelopeModule {
                 res.send(this.makeEnvelope(data, true));
             },
             sendFail: (messages, status = 400) => {
-                res.send(this.makeEnvelope(null, false, messages, status));
+                res
+                    .status(status)
+                    .send(this.makeEnvelope(null, false, messages, status));
             }
         };
     }
