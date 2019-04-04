@@ -1,9 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+function processError(err) {
+    let messages;
+    if (err[Symbol.iterator])
+        messages = Array.from(err);
+    else if (typeof err === 'string')
+        messages = [err];
+    else if (err instanceof Error)
+        messages = [err.message];
+    else
+        messages = ['An unknown error occurred'];
+    return messages;
+}
+exports.processError = processError;
 class JsonEnvelopeModule {
     constructor(config = {}) {
         this.config = config;
-        this.app = null;
         this.publicName = config.name || process.env.npm_package_name;
         this.publicVersion = config.version || process.env.npm_package_version;
     }
@@ -12,23 +24,13 @@ class JsonEnvelopeModule {
         const { handleErrors = false } = this.config;
         if (handleErrors) {
             this.app.applyErrorHandler((err, ctx) => {
-                let messages;
-                if (err[Symbol.iterator])
-                    messages = Array.from(err);
-                else if (typeof err === 'string')
-                    messages = [err];
-                else if (err instanceof Error)
-                    messages = [err.message];
-                else
-                    messages = ['An unknown error occurred'];
-                ctx.res.send(this.makeEnvelope(null, false, messages, 400));
+                ctx.res.send(this.makeEnvelope(null, false, processError(err), 400));
             });
         }
     }
     clearModule() { }
     extendExpress() { }
     extendEndpointContext({ res }) {
-        // let api = new Api(ctx.req, ctx.res, this.config)
         return {
             sendData: (data) => {
                 res.send(this.makeEnvelope(data, true));

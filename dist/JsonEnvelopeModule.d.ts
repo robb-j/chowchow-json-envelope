@@ -8,6 +8,7 @@ export declare type JsonEnvelopeContext = {
     sendData: (data: any) => void;
     sendFail: (messages: string[], status?: number) => void;
 };
+export declare function processError(err: any): string[];
 export declare class JsonEnvelopeModule implements Module {
     config: JsonEnvelopeConfig;
     app: ChowChow;
