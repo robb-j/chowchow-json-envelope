@@ -1,7 +1,10 @@
 import { JsonEnvelopeModule, processError } from '../JsonEnvelopeModule'
 import { ChowChow, ChowChowInternals } from '@robb_j/chowchow'
+import supertest from 'supertest'
 
 class FakeChow extends ChowChow {
+  agent = supertest(this.expressApp)
+
   async startServer() {}
   async stopServer() {}
 }
@@ -30,7 +33,7 @@ describe('JsonEnvelopeModule', () => {
       name: 'my-fancy-api',
       version: 'v1'
     })
-    chow = FakeChow.create().use(jsonEnvelope) as any
+    chow = new FakeChow().use(jsonEnvelope) as any
     jsonEnvelope.app = chow
   })
 
@@ -74,6 +77,37 @@ describe('JsonEnvelopeModule', () => {
       expect(env.meta).toMatchObject({
         name: 'my-fancy-api',
         version: 'v1'
+      })
+    })
+  })
+
+  describe('handleErrors', () => {
+    beforeEach(async () => {
+      chow.applyRoutes((app, r) => {
+        app.get('/bad-route', ctx => {
+          throw new Error('some_error')
+        })
+      })
+
+      await chow.start()
+    })
+    afterEach(async () => {
+      await chow.stop()
+    })
+
+    it('should return a http/400', async () => {
+      let res = await chow.agent.get('/bad-route')
+      expect(res.status).toEqual(400)
+    })
+
+    it('should send the error in the envelope', async () => {
+      let res = await chow.agent.get('/bad-route')
+      expect(res.body).toEqual({
+        meta: expect.objectContaining({
+          success: false,
+          messages: ['some_error']
+        }),
+        data: null
       })
     })
   })

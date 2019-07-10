@@ -37,8 +37,9 @@ export class JsonEnvelopeModule implements Module {
     const { handleErrors = false } = this.config
 
     if (handleErrors) {
-      this.app.applyErrorHandler((err, ctx) => {
-        ctx.res.send(this.makeEnvelope(null, false, processError(err), 400))
+      this.app.applyErrorHandler((err, { res }) => {
+        let payload = this.makeEnvelope(null, false, processError(err), 400)
+        res.status(400).send(payload)
       })
     }
   }
